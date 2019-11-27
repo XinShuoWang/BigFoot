@@ -3,6 +3,7 @@ package cn.wangxinshuo.bigfoot.server.forward;
 import cn.wangxinshuo.bigfoot.util.encryption.decrypt.Decrypt;
 import cn.wangxinshuo.bigfoot.server.conf.ServerConfiguration;
 
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,10 +14,11 @@ import java.util.Date;
  * 把请求读进来，再转发
  * */
 public class ServerReverseSocketSend extends Thread {
-    private Socket client, destination;
+    private SSLSocket client;
+    private Socket destination;
     private ServerConfiguration configuration;
 
-    public ServerReverseSocketSend(Socket client, Socket destination, ServerConfiguration configuration) {
+    public ServerReverseSocketSend(SSLSocket client, Socket destination, ServerConfiguration configuration) {
         this.client = client;
         this.destination = destination;
         this.configuration = configuration;

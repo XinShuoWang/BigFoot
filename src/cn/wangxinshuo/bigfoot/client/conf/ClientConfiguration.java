@@ -1,17 +1,16 @@
 package cn.wangxinshuo.bigfoot.client.conf;
 
 import cn.wangxinshuo.bigfoot.conf.Configuration;
-import cn.wangxinshuo.bigfoot.util.hash.Hash;
-
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 public class ClientConfiguration implements Configuration {
     private Integer listenPort;
     private String destinationAddress;
     private Integer destinationPort;
-    private String hashMethod;
-    private String password;
+    // SSL
+    private String keyStore;
+    private String keyStorePassword;
+    private String trustStore;
+    private String trustStorePassword;
 
     public Integer getListenPort() {
         return listenPort;
@@ -40,36 +39,35 @@ public class ClientConfiguration implements Configuration {
         this.destinationPort = destinationPort;
     }
 
-    public String getHashMethod() {
-        return hashMethod;
+    public String getKeyStore() {
+        return keyStore;
     }
 
-    public void setHashMethod(String hashMethod) {
-        System.out.println("Hash算法：" + hashMethod);
-        this.hashMethod = hashMethod;
+    public void setKeyStore(String keyStore) {
+        this.keyStore = keyStore;
     }
 
-    public int getPassword() {
-        String result;
-        Calendar calendar = new GregorianCalendar();
-        String strengthen_password = password + String.valueOf(calendar.get(Calendar.YEAR))
-                + String.valueOf(calendar.get(Calendar.MONTH))
-                + String.valueOf(calendar.get(Calendar.DAY_OF_MONTH))
-                + String.valueOf(calendar.get(Calendar.HOUR_OF_DAY));
-        switch (this.getHashMethod()) {
-            case "SHA-256":
-                result = Hash.sha(strengthen_password, 256);
-            case "SHA-512":
-                result = Hash.sha(strengthen_password, 512);
-            default:
-                result = Hash.md5(strengthen_password);
-        }
-        assert result != null;
-        return result.charAt(0);
+    public String getKeyStorePassword() {
+        return keyStorePassword;
     }
 
-    public void setPassword(String password) {
-        System.out.println("系统文件设置密码：" + password);
-        this.password = password;
+    public void setKeyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getTrustStore() {
+        return trustStore;
+    }
+
+    public void setTrustStore(String trustStore) {
+        this.trustStore = trustStore;
+    }
+
+    public String getTrustStorePassword() {
+        return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
     }
 }

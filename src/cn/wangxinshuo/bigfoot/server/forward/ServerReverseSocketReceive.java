@@ -3,6 +3,7 @@ package cn.wangxinshuo.bigfoot.server.forward;
 import cn.wangxinshuo.bigfoot.util.encryption.encrypt.Encrypt;
 import cn.wangxinshuo.bigfoot.server.conf.ServerConfiguration;
 
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,7 +17,7 @@ public class ServerReverseSocketReceive extends Thread {
     private Socket client, destination;
     private ServerConfiguration configuration;
 
-    public ServerReverseSocketReceive(Socket client, Socket destination, ServerConfiguration configuration) {
+    public ServerReverseSocketReceive(SSLSocket client, Socket destination, ServerConfiguration configuration) {
         this.client = client;
         this.destination = destination;
         this.configuration = configuration;

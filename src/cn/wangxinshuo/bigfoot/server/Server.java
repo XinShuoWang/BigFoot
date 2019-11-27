@@ -22,8 +22,15 @@ public class Server {
             configuration.setDestinationAddress(properties.getProperty("REMOTE_ADDRESS"));
             configuration.setDestinationPort(Integer.valueOf(properties.getProperty("REMOTE_PORT")));
             configuration.setListenPort(Integer.valueOf(properties.getProperty("LOCAL_PORT")));
-            configuration.setHashMethod(properties.getProperty("HASH_METHOD"));
-            configuration.setPassword(properties.getProperty("PASSWORD"));
+            // SSL
+            System.setProperty("javax.net.ssl.keyStore",
+                    properties.getProperty("keyStore"));
+            System.setProperty("javax.net.ssl.keyStorePassword",
+                    properties.getProperty("keyStorePassword"));
+            System.setProperty("javax.net.ssl.trustStore",
+                    properties.getProperty("trustStore"));
+            System.setProperty("javax.net.ssl.trustStorePassword",
+                    properties.getProperty("trustStorePassword"));
             // load
             ServerListenSocket serverListenSocket = new ServerListenSocket(configuration);
             serverListenSocket.listen();

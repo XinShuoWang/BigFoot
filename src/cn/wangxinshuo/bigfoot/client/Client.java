@@ -11,19 +11,25 @@ import java.util.Properties;
 
 public class Client {
     public static void main(String[] args) {
-        // try打开配置文件
+// try打开配置文件
         try (InputStream inputStream = new FileInputStream(new File(args[0]))) {
             Properties properties = new Properties();
             // 加载配置文件
             properties.load(inputStream);
             ClientConfiguration configuration = new ClientConfiguration();
-            /* 依据配置文件初始化配置类  */
-            // 读入客户端相关配置文件
+            // 依据配置文件初始化配置类
             configuration.setDestinationAddress(properties.getProperty("REMOTE_ADDRESS"));
             configuration.setDestinationPort(Integer.valueOf(properties.getProperty("REMOTE_PORT")));
             configuration.setListenPort(Integer.valueOf(properties.getProperty("LOCAL_PORT")));
-            configuration.setHashMethod(properties.getProperty("HASH_METHOD"));
-            configuration.setPassword(properties.getProperty("PASSWORD"));
+            // SSL
+            System.setProperty("javax.net.ssl.keyStore",
+                    properties.getProperty("keyStore"));
+            System.setProperty("javax.net.ssl.keyStorePassword",
+                    properties.getProperty("keyStorePassword"));
+            System.setProperty("javax.net.ssl.trustStore",
+                    properties.getProperty("trustStore"));
+            System.setProperty("javax.net.ssl.trustStorePassword",
+                    properties.getProperty("trustStorePassword"));
             // 启动客户端程序
             ClientListenSocket clientListenSocket = new ClientListenSocket(configuration);
             clientListenSocket.listen();
