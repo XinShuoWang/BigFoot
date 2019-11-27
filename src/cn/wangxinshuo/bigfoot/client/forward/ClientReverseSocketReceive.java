@@ -6,6 +6,7 @@ import cn.wangxinshuo.bigfoot.util.encryption.decrypt.Decrypt;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 
 /*
 * 将返回的数据写回
@@ -37,7 +38,9 @@ public class ClientReverseSocketReceive extends Thread {
                 // 写回给请求端
                 outputStream.write(decryptResult, 0, decryptResult.length);
                 outputStream.flush();
-                System.out.println("BigFootServer ----> BigFootClient: " + String.valueOf(size) + " 字节");
+                System.out.println(new Date().toString()
+                        + "\tBigFootServer ----> BigFootClient ---> Proxy: "
+                        + String.valueOf(size) + " 字节");
             }
         }catch (IOException ignored){
 

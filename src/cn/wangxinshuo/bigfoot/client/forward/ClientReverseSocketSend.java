@@ -5,6 +5,7 @@ import cn.wangxinshuo.bigfoot.util.encryption.encrypt.Encrypt;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 
 /*
  * 把请求读进来，再转发
@@ -36,7 +37,9 @@ public class ClientReverseSocketSend extends Thread {
                 // 写入数据
                 outputStream.write(encryptResult, 0, encryptResult.length);
                 outputStream.flush();
-                System.out.println("BigFootClient ----> BigFootServer: " + String.valueOf(size) + " 字节");
+                System.out.println(new Date().toString()
+                        + "\tProxy ---> BigFootClient ----> BigFootServer: "
+                        + String.valueOf(size) + " 字节");
             }
         } catch (IOException ignored) {
 

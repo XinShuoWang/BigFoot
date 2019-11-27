@@ -2,7 +2,6 @@ package cn.wangxinshuo.bigfoot.client;
 
 import cn.wangxinshuo.bigfoot.client.conf.ClientConfiguration;
 import cn.wangxinshuo.bigfoot.client.listen.ClientListenSocket;
-import cn.wangxinshuo.bigfoot.client.pac.PAC;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,10 +24,6 @@ public class Client {
             configuration.setListenPort(Integer.valueOf(properties.getProperty("LOCAL_PORT")));
             configuration.setHashMethod(properties.getProperty("HASH_METHOD"));
             configuration.setPassword(properties.getProperty("PASSWORD"));
-            // 读入PAC相关配置文件
-            configuration.setPacPort(Integer.valueOf(properties.getProperty("PAC_PORT")));
-            // 启动PAC程序
-            new PAC(configuration).start();
             // 启动客户端程序
             ClientListenSocket clientListenSocket = new ClientListenSocket(configuration);
             clientListenSocket.listen();

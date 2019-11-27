@@ -12,7 +12,6 @@ public class ClientConfiguration implements Configuration {
     private Integer destinationPort;
     private String hashMethod;
     private String password;
-    private Integer pacPort;
 
     public Integer getListenPort() {
         return listenPort;
@@ -72,14 +71,5 @@ public class ClientConfiguration implements Configuration {
     public void setPassword(String password) {
         System.out.println("系统文件设置密码：" + password);
         this.password = password;
-    }
-
-    public Integer getPacPort() {
-        return pacPort;
-    }
-
-    public void setPacPort(Integer pacPort) {
-        System.out.println("PAC监听端口：" + String.valueOf(pacPort));
-        this.pacPort = pacPort;
     }
 }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Date;
 
 /*
 * 将返回的数据写回
@@ -36,7 +37,9 @@ public class ServerReverseSocketReceive extends Thread {
                 byte []encryptResult = Encrypt.encrypt(data, size, configuration);
                 outputStream.write(encryptResult, 0, encryptResult.length);
                 outputStream.flush();
-                System.out.println("Squid ----> BigFootServer: " + String.valueOf(size) + " 字节");
+                System.out.println(new Date().toString()
+                        + "\tSquid ---> BigFootServer ---> BigFootClient: "
+                        + String.valueOf(size) + " 字节");
             }
         }catch (IOException ignored){
 
