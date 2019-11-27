@@ -1,10 +1,8 @@
 package cn.wangxinshuo.bigfoot.util.socket.ssl;
 
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.*;
 import java.io.IOException;
+
 
 public class SSLSocketBigFoot {
 
