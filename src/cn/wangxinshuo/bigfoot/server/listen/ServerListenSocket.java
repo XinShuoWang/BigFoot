@@ -1,16 +1,18 @@
-package cn.wangxinshuo.bigfoot.server;
+package cn.wangxinshuo.bigfoot.server.listen;
 
-import cn.wangxinshuo.bigfoot.conf.Configuration;
+import cn.wangxinshuo.bigfoot.server.conf.ServerConfiguration;
+import cn.wangxinshuo.bigfoot.server.forward.ServerReverseSocketReceive;
+import cn.wangxinshuo.bigfoot.server.forward.ServerReverseSocketSend;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ListenSocketBigFoot {
-    private Configuration configuration;
+public class ServerListenSocket {
+    private ServerConfiguration configuration;
     private ServerSocket serverSocket;
 
-    public ListenSocketBigFoot(Configuration configuration) throws IOException {
+    public ServerListenSocket(ServerConfiguration configuration) throws IOException {
         this.configuration = configuration;
         // init server socket
         serverSocket = new ServerSocket(configuration.getListenPort());
@@ -22,12 +24,10 @@ public class ListenSocketBigFoot {
             Socket clientSocket = this.serverSocket.accept();
             Socket serverSocket = new Socket(configuration.getDestinationAddress(),
                     configuration.getDestinationPort());
-            System.out.println("创建Socket完毕！开启转发线程！");
             // 先开读取进程
-            new ReverseSocketBigFootReceive(clientSocket, serverSocket, configuration).start();
+            new ServerReverseSocketReceive(clientSocket, serverSocket, configuration).start();
             // 再开转发进程
-            new ReverseSocketBigFootSend(clientSocket, serverSocket, configuration).start();
-            System.out.println("转发线程启动完毕！");
+            new ServerReverseSocketSend(clientSocket, serverSocket, configuration).start();
         }
     }
 }

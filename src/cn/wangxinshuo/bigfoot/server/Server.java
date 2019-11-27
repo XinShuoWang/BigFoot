@@ -1,6 +1,8 @@
 package cn.wangxinshuo.bigfoot.server;
 
 import cn.wangxinshuo.bigfoot.conf.Configuration;
+import cn.wangxinshuo.bigfoot.server.conf.ServerConfiguration;
+import cn.wangxinshuo.bigfoot.server.listen.ServerListenSocket;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +17,7 @@ public class Server {
             Properties properties = new Properties();
             // 加载配置文件流
             properties.load(inputStream);
-            Configuration configuration = new Configuration();
+            ServerConfiguration configuration = new ServerConfiguration();
             // set configuration
             configuration.setDestinationAddress(properties.getProperty("REMOTE_ADDRESS"));
             configuration.setDestinationPort(Integer.valueOf(properties.getProperty("REMOTE_PORT")));
@@ -23,8 +25,8 @@ public class Server {
             configuration.setHashMethod(properties.getProperty("HASH_METHOD"));
             configuration.setPassword(properties.getProperty("PASSWORD"));
             // load
-            ListenSocketBigFoot listenSocketBigFoot = new ListenSocketBigFoot(configuration);
-            listenSocketBigFoot.listen();
+            ServerListenSocket serverListenSocket = new ServerListenSocket(configuration);
+            serverListenSocket.listen();
         } catch (IOException e) {
             e.printStackTrace();
         }

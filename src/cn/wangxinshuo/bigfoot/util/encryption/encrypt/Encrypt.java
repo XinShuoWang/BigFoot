@@ -1,4 +1,4 @@
-package cn.wangxinshuo.bigfoot.encryption.encrypt;
+package cn.wangxinshuo.bigfoot.util.encryption.encrypt;
 
 import cn.wangxinshuo.bigfoot.conf.Configuration;
 

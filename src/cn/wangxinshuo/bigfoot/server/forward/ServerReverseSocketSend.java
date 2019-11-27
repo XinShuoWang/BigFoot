@@ -1,7 +1,7 @@
-package cn.wangxinshuo.bigfoot.server;
+package cn.wangxinshuo.bigfoot.server.forward;
 
-import cn.wangxinshuo.bigfoot.conf.Configuration;
-import cn.wangxinshuo.bigfoot.encryption.decrypt.Decrypt;
+import cn.wangxinshuo.bigfoot.util.encryption.decrypt.Decrypt;
+import cn.wangxinshuo.bigfoot.server.conf.ServerConfiguration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,11 +11,11 @@ import java.net.Socket;
 /*
  * 把请求读进来，再转发
  * */
-class ReverseSocketBigFootSend extends Thread {
+public class ServerReverseSocketSend extends Thread {
     private Socket client, destination;
-    private Configuration configuration;
+    private ServerConfiguration configuration;
 
-    ReverseSocketBigFootSend(Socket client, Socket destination, Configuration configuration) {
+    public ServerReverseSocketSend(Socket client, Socket destination, ServerConfiguration configuration) {
         this.client = client;
         this.destination = destination;
         this.configuration = configuration;
@@ -33,7 +33,7 @@ class ReverseSocketBigFootSend extends Thread {
                 byte[] decryptResult = Decrypt.decrypt(data, size, configuration);
                 outputStream.write(decryptResult, 0, decryptResult.length);
                 outputStream.flush();
-                System.out.println("此次Send读取字节数：" + String.valueOf(size));
+                System.out.println("BigFootServer ----> Squid: " + String.valueOf(size) + " 字节");
             }
         } catch (IOException ignored) {
 
