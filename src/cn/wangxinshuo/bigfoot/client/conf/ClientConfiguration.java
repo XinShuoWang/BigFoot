@@ -11,6 +11,8 @@ public class ClientConfiguration implements Configuration {
     private String keyStorePassword;
     private String trustStore;
     private String trustStorePassword;
+    //
+    private byte[] camouflage;
 
     public Integer getListenPort() {
         return listenPort;
@@ -69,5 +71,14 @@ public class ClientConfiguration implements Configuration {
 
     public void setTrustStorePassword(String trustStorePassword) {
         this.trustStorePassword = trustStorePassword;
+    }
+
+    public byte[] getCamouflage() {
+        return camouflage;
+    }
+
+    public void setCamouflage(String camouflage) {
+        System.out.println("有效屏蔽头：" + camouflage);
+        this.camouflage = camouflage.getBytes();
     }
 }

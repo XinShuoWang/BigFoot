@@ -30,6 +30,8 @@ public class Client {
                     properties.getProperty("trustStore"));
             System.setProperty("javax.net.ssl.trustStorePassword",
                     properties.getProperty("trustStorePassword"));
+            // camouflage
+            configuration.setCamouflage(properties.getProperty("HEAD_SIGN"));
             // 启动客户端程序
             ClientListenSocket clientListenSocket = new ClientListenSocket(configuration);
             clientListenSocket.listen();
