@@ -31,6 +31,8 @@ public class Server {
                     properties.getProperty("trustStore"));
             System.setProperty("javax.net.ssl.trustStorePassword",
                     properties.getProperty("trustStorePassword"));
+            // camouflage
+            configuration.setCamouflage(properties.getProperty("HEAD_SIGN"));
             // load
             ServerListenSocket serverListenSocket = new ServerListenSocket(configuration);
             serverListenSocket.listen();
