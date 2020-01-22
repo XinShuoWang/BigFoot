@@ -1,8 +1,0 @@
-# Project exclude paths
-/out/
-
-.idea
-
-BigFoot.iml
-
-src/META-INF
