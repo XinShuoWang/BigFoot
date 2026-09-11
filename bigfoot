@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PATH="$HOME/.local/bin:$PATH"
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+python_bin=python3
+if [ -x "$project_dir/.bigfoot/venv/bin/python" ]; then
+  python_bin="$project_dir/.bigfoot/venv/bin/python"
+fi
+exec "$python_bin" "$project_dir/scripts/bigfoot.py" "$@"

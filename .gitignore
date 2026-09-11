@@ -1,0 +1,15 @@
+/tunnel
+*.key
+*.csr
+*.srl
+token.txt
+__pycache__/
+/secrets/
+/dist/
+client-password.txt
+client.yaml
+.env
+
+/secrets-local/
+
+/.bigfoot/
