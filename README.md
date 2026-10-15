@@ -1,15 +1,20 @@
 # BigFoot
 
-双端 TCP 代理：Gate 部署在阿里云上海，Voyager 部署在香港。客户端使用 **Trojan over WSS** 连接 Gate，Gate/Voyager 之间使用独立口令和内层 TLS 1.3。
+双端 TCP 代理：Gate 部署在阿里云上海，Voyager 可部署在香港、新加坡、东京、美国硅谷等地区，由 Gate 按规则选择出口。客户端使用 **Trojan over WSS** 连接 Gate，Gate/Voyager 之间使用独立口令和内层 TLS 1.3。
 
 ```text
-手机 / Mihomo → HTTPS 网关 → Gate → WSS + 内层 TLS → Voyager → 公网 TCP 目标
+手机 / Mihomo → HTTPS 网关 → 上海 Gate → 按规则选择 Voyager → 公网 TCP 目标
+                                      ├─ 香港
+                                      ├─ 新加坡
+                                      ├─ 东京
+                                      └─ 美国硅谷
+Gate/Voyager 之间始终使用 WSS + 内层 TLS。
 ```
 
 | 名称 | 职责 | 配置键 / 命令参数 | 云函数 |
 |---|---|---|---|
 | **Gate** | 上海入口，认证客户端 | `deployment.gate` / `--only gate` | `bigfoot-gate` |
-| **Voyager** | 香港出口，连接目标 | `deployment.voyager` / `--only voyager` | `bigfoot-voyager` |
+| **Voyager** | 多地区出口，连接目标 | `deployment.voyagers` / `--only voyager` | 每节点独立函数 |
 
 ## 快速使用
 
@@ -17,12 +22,23 @@
 
 ```bash
 ./bigfoot deploy                          # 更新 Voyager、Gate，检查健康并导出客户端配置
-./bigfoot verify                          # 仅检查线上两端健康
-./bigfoot verify --mihomo /path/to/mihomo  # 检查完整 HTTPS 链路及错误密码拒绝
+./bigfoot verify                          # 检查 Gate 和所有 Voyager 健康
+./bigfoot verify --mihomo /path/to/mihomo  # 只读检查当前规则选中的 HTTPS 链路及错误密码拒绝
 ./bigfoot render                          # 从保存的 Gate 地址离线导出客户端配置
 ```
 
-手机使用 `.bigfoot/generated/client.yaml`，具体步骤见下方“手机与桌面客户端”。完整链路验收需要本机已有 Mihomo 可执行文件；工具不会自动安装客户端。
+手机使用 `.bigfoot/generated/client.yaml`，具体步骤见下方“手机与桌面客户端”。多节点完整验收使用 `./bigfoot deploy --only gate --mihomo /path/to/mihomo`，会临时逐个选择出口并恢复正式规则。需要本机已有 Mihomo 可执行文件；工具不会自动安装客户端。
+
+## Gate 集中分流
+
+客户端始终连接同一个 Gate，规则在服务端管理，修改名单后无需重新导入客户端配置。
+
+- 在 `.bigfoot/config.json` 的 `routing.default` 中选择默认 Voyager。
+- `routing.rules` 按顺序把文本名单分配给不同 Voyager；第一组命中生效，否则走默认出口。
+- 文本名单支持精确域名、域名后缀、IPv4/IPv6 网段及目标端口，可按用途拆成多个文件。
+- 名单更新后运行 `./bigfoot deploy --only gate`；指定出口故障时连接失败，不自动更换地区。
+
+已有单出口配置可显式迁移，香港身份及客户端密码保持不变。具体步骤和名单格式见[多出口与规则管理](docs/operations.md#多出口与规则管理)。
 
 ## 手机与桌面客户端
 
@@ -63,6 +79,7 @@ curl --noproxy '' --proxy http://127.0.0.1:7890 --fail https://example.com/
 ## 使用限制
 
 - 仅支持公网 TCP，不支持 UDP/QUIC、mux 或旧会话恢复。
+- 新配置默认每端 0.05 vCPU / 128 MiB，单实例并发 200；规格统一在主配置维护，实际容量未验收。
 - 默认单次会话最长 14 分钟，双向空闲上限 2 分钟；冷启动和实例更新可能中断连接。
 - 长连接会产生计算和流量费用；单实例并发上限不等于账户费用上限。
 
