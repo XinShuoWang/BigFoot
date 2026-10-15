@@ -29,6 +29,9 @@ func main() {
 }
 
 func makeHandler(c config) (http.Handler, error) {
+	if c.RoutingConfig != "" {
+		return c.routedHandler()
+	}
 	tokens, err := c.secrets(c.TokenFile, "BIGFOOT_TOKEN")
 	if err != nil {
 		return nil, err

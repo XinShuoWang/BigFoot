@@ -17,7 +17,7 @@ import (
 
 type config struct {
 	Mode, Listen, TokenFile, ClientPasswordFile                    string
-	InnerIdentityKey                                               string
+	InnerIdentityKey, RoutingConfig                                string
 	InnerCert, InnerKey, InnerCA, InnerName, VoyagerURL            string
 	OuterCert, OuterKey, OuterCA, WSPath                           string
 	BehindTLSProxy, Check                                          bool
@@ -39,6 +39,7 @@ func parseConfig(args []string, getenv func(string) string) (config, error) {
 	fs.StringVar(&c.InnerCA, "inner-ca", "", "Gate inner TLS CA PEM")
 	fs.StringVar(&c.InnerName, "inner-name", "voyager.internal", "Voyager inner TLS identity")
 	fs.StringVar(&c.VoyagerURL, "voyager-url", "", "Gate upstream wss URL")
+	fs.StringVar(&c.RoutingConfig, "routing-config", "", "Gate/local compiled routing JSON file")
 	fs.StringVar(&c.OuterCA, "outer-ca", "", "optional CA for outer WSS (system roots by default)")
 	fs.StringVar(&c.OuterCert, "outer-cert", "", "direct serving TLS certificate PEM")
 	fs.StringVar(&c.OuterKey, "outer-key", "", "direct serving TLS key PEM")
@@ -105,7 +106,10 @@ func parseConfig(args []string, getenv func(string) string) (config, error) {
 	if c.MaxConnections < 1 || c.SessionTimeout <= 0 || c.IdleTimeout <= 0 || c.HandshakeTimeout <= 0 || c.ShutdownTimeout <= 0 {
 		return c, errors.New("connection limits and timeouts must be positive")
 	}
-	if c.Mode != "voyager" {
+	if c.RoutingConfig != "" && (c.Mode == "voyager" || c.VoyagerURL != "" || c.TokenFile != "" || c.InnerCA != "" || c.getenv("BIGFOOT_TOKEN") != "" || c.getenv("BIGFOOT_INNER_CA_PEM") != "") {
+		return c, errors.New("routing-config conflicts with Voyager mode or legacy upstream credentials")
+	}
+	if c.Mode != "voyager" && c.RoutingConfig == "" {
 		u, e := url.Parse(c.VoyagerURL)
 		if e != nil || u.Scheme != "wss" || u.Hostname() == "" || u.User != nil || u.Fragment != "" {
 			return c, errors.New("voyager-url must be a wss URL without userinfo or fragment")

@@ -49,3 +49,18 @@ func TestCredentialsValidation(t *testing.T) {
 		t.Fatal("rotation secrets rejected")
 	}
 }
+
+func TestRoutingConfigExclusiveWithLegacyUpstream(t *testing.T) {
+	get := func(string) string { return "" }
+	if _, err := parseConfig([]string{"-mode", "gate", "-behind-tls-proxy", "-routing-config", "routing.json"}, get); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"-mode", "gate", "-behind-tls-proxy", "-routing-config", "routing.json", "-voyager-url", "wss://x/tunnel"},
+		{"-mode", "voyager", "-behind-tls-proxy", "-routing-config", "routing.json"},
+	} {
+		if _, err := parseConfig(args, get); err == nil {
+			t.Fatal("conflicting routing accepted")
+		}
+	}
+}
