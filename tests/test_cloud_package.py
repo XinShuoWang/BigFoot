@@ -31,3 +31,22 @@ class ReadbackTests(unittest.TestCase):
         self.assertFalse(fc_deploy.matches_submission(stale,submitted,expected))
         stale.environment_variables={'mode':'voyager'}
         self.assertTrue(fc_deploy.matches_submission(stale,submitted,expected))
+
+class PlatformDefaultsTests(unittest.TestCase):
+    def test_readback_accepts_only_unspecified_platform_health_check_default(self):
+        from types import SimpleNamespace
+        class Runtime:
+            def __init__(self,values):self.values=values
+            def to_map(self):return self.values
+        submitted=SimpleNamespace(code_checksum='new')
+        expected={'custom_runtime_config':Runtime({'command':['/code/tunnel'],'port':9000})}
+        actual=SimpleNamespace(code_checksum='new',custom_runtime_config=Runtime({'command':['/code/tunnel'],'port':9000,'healthCheckConfig':{'initialDelaySeconds':0}}))
+        self.assertTrue(fc_deploy.matches_submission(actual,submitted,expected))
+        actual.custom_runtime_config.values['command']=['/code/stale']
+        self.assertFalse(fc_deploy.matches_submission(actual,submitted,expected))
+        actual.custom_runtime_config.values['command']=['/code/tunnel']
+        actual.custom_runtime_config.values['args']=['-mode','local']
+        self.assertFalse(fc_deploy.matches_submission(actual,submitted,expected))
+        actual.custom_runtime_config.values.pop('args')
+        expected['custom_runtime_config'].values['healthCheckConfig']={'initialDelaySeconds':5}
+        self.assertFalse(fc_deploy.matches_submission(actual,submitted,expected))

@@ -34,7 +34,7 @@ def main():
                         raise RuntimeError(f'Cloud HTTPS test failed (curl exit {result.returncode})')
                     if not valid and result.returncode==0:
                         raise RuntimeError('Wrong password accepted')
-                    print('PASS: Mihomo -> Shanghai Gate -> Hong Kong Voyager -> HTTPS' if valid else 'PASS: wrong client password rejected',flush=True)
+                    print('PASS: Mihomo -> Gate -> selected Voyager -> HTTPS' if valid else 'PASS: wrong client password rejected',flush=True)
                 finally:
                     proc.terminate()
                     try:proc.wait(timeout=8)

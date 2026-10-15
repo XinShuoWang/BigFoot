@@ -21,10 +21,10 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(config.read_bytes(),before)
             data=json.loads(before)
-            self.assertNotEqual(data['credentials']['tunnel_token'],data['credentials']['client_password'])
+            self.assertNotEqual(data['credentials']['voyagers']['hongkong']['tunnel_token'],data['credentials']['client_password'])
             self.assertEqual(config.stat().st_mode&0o777,0o600)
-            for role in ('gate','voyager'):
-                data['deployment'][role].update(domain=f'{role}.example.com')
+            data['deployment']['gate']['domain']='gate.example.com'
+            data['deployment']['voyagers']['hongkong']['domain']='voyager.example.com'
             config.write_text(json.dumps(data))
             result=self.invoke(config,'render')
             self.assertEqual(result.returncode,0,result.stderr)
@@ -38,7 +38,7 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(target.stat().st_mode&0o777,0o600)
             rendered=json.loads(target.read_text())
             self.assertEqual(rendered['proxies'][0]['password'],data['credentials']['client_password'])
-            self.assertNotIn(data['credentials']['tunnel_token'],target.read_text())
+            self.assertNotIn(data['credentials']['voyagers']['hongkong']['tunnel_token'],target.read_text())
             # Regenerating derived files must not rotate saved credentials.
             self.assertEqual(self.invoke(config,'render').returncode,0)
             self.assertEqual(json.loads(config.read_text())['credentials'],data['credentials'])
@@ -49,8 +49,8 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(self.invoke(config,'init').returncode,0)
             data=json.loads(config.read_text())
             self.assertNotIn('backend',data['deployment'])
-            for role in ('gate','voyager'):
-                self.assertNotIn('image',data['deployment'][role])
+            self.assertNotIn('image',data['deployment']['gate'])
+            self.assertNotIn('image',data['deployment']['voyagers']['hongkong'])
             data['deployment']['gate']['domain']='gate.example.com'
             config.write_text(json.dumps(data))
             result=self.invoke(config,'render')

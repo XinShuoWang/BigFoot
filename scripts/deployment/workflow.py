@@ -4,14 +4,16 @@ from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
+import io
+import zipfile
 import os
 import re
 import tempfile
-from .config import environment, replace_private, export_client
-from .artifact import build_package
+from .config import environment, replace_private, export_client, voyagers, load_routing, domain, deployment_resources
+from .artifact import build_package, package_binary
 from .aliyun import AliyunFC
 from .credentials import load_profile
-from .verification import check_health, check_link
+from .verification import check_health, check_link, check_all_routes
 
 
 @contextmanager
@@ -48,8 +50,21 @@ def save_artifact(out, blob):
 
 
 def deploy_package(path, data, only, *, build=build_package, provider_factory=None,
-                   health=check_health, mihomo=None, link=check_link):
-    roles = ('voyager','gate') if only=='all' else (only,)
+                   health=check_health, mihomo=None, link=check_link, voyager=None):
+    if only not in ('all','gate','voyager'):raise UserError('invalid deployment role')
+    multi=data.get('version')==3
+    if multi and mihomo and only=='voyager':
+        raise UserError('All-route Mihomo verification updates Gate; use deploy --only gate --mihomo PATH after Voyager deployment')
+    if voyager and (only!='voyager' or not multi or voyager not in voyagers(data)):
+        raise UserError('--voyager requires --only voyager and a configured node ID')
+    if multi:
+        roles=['voyager:'+name for name in voyagers(data) if voyager is None or name==voyager] if only in ('all','voyager') else []
+        if only in ('all','gate'):roles.append('gate')
+    else:
+        roles = ('voyager','gate') if only=='all' else (only,)
+    def node_config(job):
+        return data['deployment']['voyagers'][job.split(':',1)[1]] if ':' in job else data['deployment'][job]
+
     with deployment_lock(path):
         # Refuse overwriting edits made after CLI loaded the configuration.
         initial = path.read_bytes()
@@ -64,35 +79,53 @@ def deploy_package(path, data, only, *, build=build_package, provider_factory=No
             replace_private(out/'deployment.json',journal)
         try:
             record('preflight')
-            if 'gate' in roles and 'voyager' not in roles and not data['deployment']['voyager']['domain']:
+            if only=='gate' and any(not node['domain'] for node in voyagers(data).values()):
                 raise UserError('Voyager endpoint required for Gate-only deployment')
+            resource_options={'resources':deployment_resources(data)} if 'resources' in data['deployment'] else {}
+            routing=load_routing(path,data,preflight=True) if multi else None
             if provider_factory is None:
                 profile = load_profile(data['deployment']['access'])
                 provider_factory = lambda region: AliyunFC.connect(region,profile)
             # Instantiate every regional client before making any mutations.
-            providers = {role:provider_factory(data['deployment'][role]['region']) for role in roles}
+            providers = {job:provider_factory(node_config(job)['region']) for job in roles}
             record('build')
-            artifact = build(data, roles)
+            artifact = build(data, roles, routing) if multi else build(data, roles)
             journal['artifact_sha256'] = save_artifact(out,artifact)
-            for role in roles:
-                record('function',role)
-                host = providers[role].apply(role, environment(data,role), artifact, lambda stage:record(stage,role))
+            for job in roles:
+                role,_,name=job.partition(':')
+                record('function',job)
+                if multi:
+                    if role=='gate':
+                        # Preserve the validated rule snapshot; update only the discovered URLs.
+                        for key,node in routing['nodes'].items():
+                            node['url']='wss://'+domain(voyagers(data)[key]['domain'])+'/tunnel'
+                    with zipfile.ZipFile(io.BytesIO(artifact)) as archive:
+                        current=package_binary(archive.read('tunnel'),routing if role=='gate' else None)
+                    journal.setdefault('artifacts',{})[job]=save_artifact(out,current)
+                    host=providers[job].apply(role,environment(data,role,name or None),current,
+                        lambda stage:record(stage,job),function_name=node_config(job).get('function_name','bigfoot-gate'),**resource_options)
+                else:
+                    host=providers[job].apply(role,environment(data,role),artifact,lambda stage:record(stage,job),**resource_options)
                 # Persist successfully discovered endpoints even if health fails.
                 if path.read_bytes() != initial:
                     raise UserError('Configuration changed during deployment; rerun to reconcile')
-                data['deployment'][role]['domain'] = host
+                node_config(job)['domain'] = host
                 replace_private(path,data)
                 initial = path.read_bytes()
-                record('health',role)
+                record('health',job)
                 health(host)
-                journal['completed'].append(role)
-                print(f'{role.title()}: deployed and healthy',flush=True)
+                journal['completed'].append(job)
+                print(f'{job}: deployed and healthy',flush=True)
             if data['deployment']['gate']['domain']:
                 target=export_client(path,data)
                 print(f'Client configuration: {target}')
             if mihomo:
                 record('link')
-                link(path,data,mihomo)
+                if multi:
+                    check_all_routes(path,data,mihomo,providers['gate'],current,environment(data,'gate'),
+                                     health=health,probe=link,stage=lambda stage:record(stage,'gate'))
+                    journal['verified_voyagers']=list(voyagers(data))
+                else:link(path,data,mihomo)
                 journal['link_verified']=True
             journal['status']='verified' if journal['link_verified'] else 'healthy'
             record('complete')

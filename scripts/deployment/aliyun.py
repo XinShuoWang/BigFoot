@@ -3,7 +3,7 @@ from .errors import UserError
 import base64
 import json
 import time
-from .config import domain
+from .config import domain, deployment_resources
 
 def endpoint_host(url):
     if not url.startswith('https://'):
@@ -19,7 +19,15 @@ def matches_submission(actual, submitted, expected):
             continue
         observed = getattr(actual, key, None)
         if hasattr(value, 'to_map'):
-            if observed is None or observed.to_map() != value.to_map():
+            if observed is None:
+                return False
+            actual_map, expected_map = dict(observed.to_map()), value.to_map()
+            # FC adds its default health check to custom runtime readback even
+            # when omitted from the request. Keep startup fields and explicitly
+            # requested health checks strict; never ignore arbitrary extras.
+            if key == 'custom_runtime_config' and 'healthCheckConfig' not in expected_map:
+                actual_map.pop('healthCheckConfig', None)
+            if actual_map != expected_map:
                 return False
         elif observed != value:
             return False
@@ -40,14 +48,17 @@ class AliyunFC:
             from alibabacloud_tea_openapi.utils_models import Config
         except ImportError:
             raise UserError('Install cloud dependencies: .bigfoot/venv/bin/pip install -r requirements-cloud.txt') from None
-        client = Client(Config(access_key_id=profile['access_key_id'], access_key_secret=profile['access_key_secret'], region_id=region, read_timeout=15000, connect_timeout=10000))
+        # Code ZIPs are several MiB; transcontinental uploads can exceed the
+        # old 10s socket write deadline (requests uses connect_timeout to send).
+        client = Client(Config(access_key_id=profile['access_key_id'], access_key_secret=profile['access_key_secret'], region_id=region, read_timeout=120000, connect_timeout=120000))
         return cls(client, models)
 
-    def apply(self, role, env, artifact, stage):
+    def apply(self, role, env, artifact, stage, *, function_name=None, resources=None):
         client, m = self.client, self.models
-        name = 'bigfoot-'+role
-        props = dict(runtime='custom.debian11', handler='tunnel', cpu=1, memory_size=1024,
-                     disk_size=512, timeout=900, instance_concurrency=128, internet_access=True,
+        name = function_name or 'bigfoot-'+role
+        settings=deployment_resources({'deployment':{'resources':resources} if resources is not None else {}})
+        props = dict(runtime='custom.debian11', handler='tunnel', cpu=settings['cpu'], memory_size=settings['memory_mb'],
+                     disk_size=512, timeout=900, instance_concurrency=settings['instance_concurrency'], internet_access=True,
                      description='BigFoot managed code-package deployment',
                      custom_runtime_config=m.CustomRuntimeConfig(command=['/code/tunnel'], port=9000),
                      environment_variables=env, code=m.InputCodeLocation(zip_file=base64.b64encode(artifact).decode()))
